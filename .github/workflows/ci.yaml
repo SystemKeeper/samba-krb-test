@@ -13,12 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: [ '7.4', '8.0', '8.1', '8.2' ]
+        php-version: [ '8.2' ]
         image:
-          - apache
           - apache-gssapi
           - apache-fpm-gssapi
-          - nginx-fpm-gssapi
 
     steps:
       - name: Checkout
@@ -71,12 +69,10 @@ jobs:
     needs: [build-php, build-other]
     strategy:
       matrix:
-        php-version: [ '7.4', '8.0', '8.1', '8.2' ]
+        php-version: [ '8.2' ]
         variant:
-          - "apache"
           - "apache-gssapi"
           - "apache-fpm-gssapi"
-          - "nginx-fpm-gssapi"
 
     steps:
       - name: Checkout
@@ -132,79 +128,4 @@ jobs:
 
           [[ $LIST == "test.txt" ]]
 
-  push-php:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php-version: [ '7.4', '8.0', '8.1', '8.2' ]
-        image:
-          - apache
-          - apache-gssapi
-          - apache-fpm-gssapi
-          - nginx-fpm-gssapi
-    needs: test
-
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: icewind1991
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Download ${{ matrix.image }} image
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp
-          name: ${{ matrix.image }}-${{ matrix.php-version }}
-      - name: Load ${{ matrix.image }} image
-        run: |
-          docker load --input /tmp/${{ matrix.image }}.tar
-      - name: Push ${{ matrix.image }}:${{ matrix.php-version }} image
-        run: |
-          docker push icewind1991/samba-krb-test-${{ matrix.image }}:${{ matrix.php-version }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Push ${{ matrix.image }}:${{ matrix.php-version }} image to ghcr.io
-        run: |
-          docker tag icewind1991/samba-krb-test-${{ matrix.image }}:${{ matrix.php-version }} ghcr.io/icewind1991/samba-krb-test-${{ matrix.image }}:${{ matrix.php-version }}
-          docker push ghcr.io/icewind1991/samba-krb-test-${{ matrix.image }}:${{ matrix.php-version }}
-
-  push-other:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        image:
-          - client
-          - dc
-    needs: test
-
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: icewind1991
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Download ${{ matrix.image }} image
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp
-          name: ${{ matrix.image }}
-      - name: Load ${{ matrix.image }} image
-        run: |
-          docker load --input /tmp/${{ matrix.image }}.tar
-      - name: Push ${{ matrix.image }} image
-        run: |
-          docker push icewind1991/samba-krb-test-${{ matrix.image }}
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Push ${{ matrix.image }} image to ghcr.io
-        run: |
-          docker tag icewind1991/samba-krb-test-${{ matrix.image }} ghcr.io/icewind1991/samba-krb-test-${{ matrix.image }}
-          docker push ghcr.io/icewind1991/samba-krb-test-${{ matrix.image }}
+  
